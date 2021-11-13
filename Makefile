@@ -1,8 +1,9 @@
 DEVICE = atmega328p
 CLOCK = 16000000
 PORT = COM7
-AVRD = C:\Arduino\hardware\tools\avr/bin/avrdude
-AVRDFLAGS = -C C:\Arduino\hardware\tools\avr/etc/avrdude.conf -v -p $(DEVICE) -c arduino -P $(PORT) -b57600 -D 
+AVRD = avrdude
+AVRDFLAGS = -v -p $(DEVICE) -c arduino -P $(PORT) -b57600 -D
+#-C C:\Arduino\hardware\tools\avr\etc\avrdude.conf
 CC = avr-gcc 
 CFLAGS = -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -Werror
 
