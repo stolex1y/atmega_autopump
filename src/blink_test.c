@@ -1,19 +1,17 @@
-#define F_CPU 16000000
 #include <avr/io.h>
 #include <util/delay.h>
 
+#define LED_PIN 5
 
-
-int main(void) {
-	DDRB = 0x10;
-	PORTB = 0xFF;
-	DDRC = 0x10;
-	PORTC = 0xFF;
-	//PORTС &= ~1<<5;
+int main() {
+	DDRB |= 1 << LED_PIN;	
+	DDRD |= 1 << LED_PIN;
+	PORTD |= (1 << LED_PIN);	
 	while(1) {
-		/*PORTС |= 1<<5;
-		_delay_ms(500);
-		PORTС &= ~1<<5; 
-		_delay_ms(500);*/
+		PORTB |= 1 << LED_PIN;
+		_delay_ms(1000);
+		PORTB &= ~(1 << LED_PIN);
+		_delay_ms(1000);
 	}
+	return 0;
 }
