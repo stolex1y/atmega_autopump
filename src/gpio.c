@@ -4,12 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define bit_clear(port, bit) (port &= ~(1 << (bit)))
-#define bit_set(port, bit)	(port |= 1 << (bit))
-#define bit_write(port, bit, val) (val ? bit_set(port, bit) : bit_clear(port, bit))
-#define bit_read(port, bit) ((port >> (bit)) & 1)
-#define bit_toggle(port, bit) (bit_write(port, bit, ~bit_read(port, bit) & 1))
-
 void pin_mode(uint8_t pin, uint8_t mode) {
 	switch (mode) {
 		case INPUT:
