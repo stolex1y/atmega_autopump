@@ -17,14 +17,11 @@ SRC = src
 BIN = bin
 TARGET = main
 #SOURCES = blink_test.c gpio.c
-OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o
+OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o
 
 VPATH += $(BIN) $(SRC)
 
 all: $(BIN)/$(TARGET).hex size
-
-build:
-	mkdir bin
 
 $(BIN)/%.o: %.c
 	$(CC) $(CFLAGS) $^ -o $@ -c
@@ -42,6 +39,7 @@ size: $(BIN)/$(TARGET).elf
 	avr-size $(AVRSFLAGS) -C $<
 	
 clean:
-	-rm -rf $(BIN)\$(TARGET).hex $(BIN)\$(TARGET).o $(BIN)\$(TARGET).elf
+	-rm -rf $(BIN)
+	mkdir $(BIN)
 	
 .PHONY: clean size flash all
