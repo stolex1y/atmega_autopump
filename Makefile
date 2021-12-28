@@ -16,18 +16,23 @@ AVRSFLAGS = --format=avr --mcu=$(DEVICE)
 SRC = src
 BIN = bin
 TARGET = main
-SOURCES = blink_test.c
+#SOURCES = blink_test.c gpio.c
+OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o
 
+VPATH += $(BIN) $(SRC)
 
 all: $(BIN)/$(TARGET).hex size
 
-$(BIN)/$(TARGET).o: $(SRC)/$(SOURCES)
+build:
+	mkdir bin
+
+$(BIN)/%.o: %.c
 	$(CC) $(CFLAGS) $^ -o $@ -c
 
-$(BIN)/$(TARGET).elf: $(BIN)/$(TARGET).o
+$(BIN)/$(TARGET).elf: $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@
 	
-$(BIN)/$(TARGET).hex: $(BIN)/$(TARGET).elf	
+$(BIN)/$(TARGET).hex: $(BIN)/$(TARGET).elf
 	$(OBJCOPY) $(COPYFLAGS) $^ $@
 
 flash: $(BIN)/$(TARGET).hex

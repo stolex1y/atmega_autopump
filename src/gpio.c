@@ -1,23 +1,14 @@
+#include "gpio.h"
+
 #include <avr/io.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-#define HIGH 0x1
-#define LOW 0x0
-
-#define INPUT 0x0
-#define OUTPUT 0x1
-#define INPUT_PULLUP 0x2
-
-void bit_clear(uint8_t port, uint8_t bit) {
-	port &= ~(1 << bit);
-}
-
-void bit_set(uint8_t port, uint8_t bit) {
-	port |= 1 << bit;
-}
-
-void bit_write(uint8_t port, uint8_t bit, bool val) {
-	val ? bit_set(port, bit) : bit_clear(port, bit);
-}
+#define bit_clear(port, bit) (port &= ~(1 << (bit)))
+#define bit_set(port, bit)	(port |= 1 << (bit))
+#define bit_write(port, bit, val) (val ? bit_set(port, bit) : bit_clear(port, bit))
+#define bit_read(port, bit) ((port >> (bit)) & 1)
+#define bit_toggle(port, bit) (bit_write(port, bit, ~bit_read(port, bit) & 1))
 
 void pin_mode(uint8_t pin, uint8_t mode) {
 	switch (mode) {
@@ -63,7 +54,66 @@ void pin_mode(uint8_t pin, uint8_t mode) {
 }
 
 void digital_write(uint8_t pin, bool val) {
-	// TODO отключение шим
-	
+    /*
+     * switch (pin) {
+    case 3: bitClear(TCCR2A, COM2B1);
+      break;
+    case 5: bitClear(TCCR0A, COM0B1);
+      break;
+    case 6: bitClear(TCCR0A, COM0A1);
+      break;
+    case 9: bitClear(TCCR1A, COM1A1);
+      break;
+    case 10: bitClear(TCCR1A, COM1B1);
+      break;
+    case 11: bitClear(TCCR2A, COM2A1); 	// PWM disable
+      break;
+  }
+     */
+	// TODO digiral_write: отключение шим
+
+    if (pin < 8) {
+        bit_write(PORTD, pin, val);
+    } else if (pin < 14) {
+        bit_write(PORTB, (pin - 8), val);
+    } else if (pin < 20) {
+        bit_write(PORTC, (pin - 14), val);
+    }
 	
 }
+
+bool digital_read(uint8_t pin) {
+    if (pin < 8) {
+        return bit_read(PIND, pin);
+    } else if (pin < 14) {
+        return bit_read(PINB, pin - 8);
+    } else if (pin < 20) {
+        return bit_read(PINC, pin - 14);
+    }
+    return 0;
+}
+
+void digital_toggle(uint8_t pin) {
+    if (pin < 8) {
+        bit_toggle(PORTD, pin);
+    } else if (pin < 14) {
+        bit_toggle(PORTB, (pin - 8));
+    } else if (pin < 20) {
+        bit_toggle(PORTC, (pin - 14));
+    }
+}
+
+bool analog_read(uint8_t pin) {
+    //TODO analog_read
+    return 0;
+}
+
+void analog_write(uint8_t pin, bool val) {
+    //TODO analog_write
+}
+
+
+
+
+
+
