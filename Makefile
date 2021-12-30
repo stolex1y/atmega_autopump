@@ -6,7 +6,7 @@ AVRD = avrdude
 AVRDFLAGS = -F -v -p $(DEVICE) -P $(PORT) -b57600 -c arduino -D -U flash:w:$<
 
 CC = avr-gcc 
-CFLAGS = -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -Werror
+CFLAGS = -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -Werror -std=c11
 
 OBJCOPY = avr-objcopy
 COPYFLAGS = -j .text -j .data -O ihex
@@ -17,7 +17,7 @@ SRC = src
 BIN = bin
 TARGET = main
 #SOURCES = blink_test.c gpio.c
-OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o
+OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o $(BIN)/lcd1602.o
 
 VPATH += $(BIN) $(SRC)
 
