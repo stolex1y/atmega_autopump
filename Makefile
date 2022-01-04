@@ -1,12 +1,13 @@
 DEVICE = atmega328p
 CLOCK = 16000000
+EEPROM_SIZE = 1024
 PORT = COM7
 
 AVRD = avrdude
-AVRDFLAGS = -F -v -p $(DEVICE) -P $(PORT) -b57600 -c arduino -D -U flash:w:$<
+AVRDFLAGS = -F -v -p $(DEVICE) -P $(PORT) -b57600 -c arduino -D -U flash:w:$< #-U eeprom:r:eeprom_dump:r
 
 CC = avr-gcc 
-CFLAGS = -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -Werror -std=c11
+CFLAGS = -DEEPROM_SIZE=1024 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -std=c11 #-Werror
 
 OBJCOPY = avr-objcopy
 COPYFLAGS = -j .text -j .data -O ihex
@@ -17,7 +18,7 @@ SRC = src
 BIN = bin
 TARGET = main
 #SOURCES = blink_test.c gpio.c
-OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o $(BIN)/lcd1602.o
+OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o $(BIN)/lcd1602.o $(BIN)/eeprom.o
 
 VPATH += $(BIN) $(SRC)
 
