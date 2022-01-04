@@ -30,26 +30,25 @@ static void send_cmd_byte(uint8_t byte);
 static void pin_init(void);
 
 void lcd1602_init(void) {
+    // lcd init
     pin_init();
     _delay_ms(15);
-    send_half_byte(0x3);
-    _delay_ms(100);
-    send_half_byte(0x3);
+    send_half_byte(0b11);
+    _delay_ms(5);
+    send_half_byte(0b11);
     _delay_ms(1);
-    send_half_byte(0x2);
-    _delay_ms(1);
+    send_half_byte(0b11);
 
-    //DB4=0 - 4-bit data length and DB3=1 - 2 lines
+    // lcd settings
+    // DB4 = 0 - 4-bit data length and DB3 = 1 - 2 lines
+    send_half_byte(0b10);
     send_cmd_byte(0b00101000);
-    _delay_ms(1);
-
-    //set display (DB2=1), cursor and blinking cursor (DB1=0, DB0=0)
+    // set display (DB2 = 1), cursor and blinking cursor (DB1 = 0, DB0 = 0)
     send_cmd_byte(0b00001100);
-    _delay_ms(1);
-
-    //DB1=1 - cursor moves to right, DB0=0 - shifting of entire isn't performed
+    // DB1 = 1 - cursor moves to right, DB0 = 0 - shifting of entire isn't performed
     send_cmd_byte(0b00000110);
-    _delay_ms(1);
+
+    lcd1602_clear();
 }
 
 void lcd1602_send_char(char ch) {
@@ -67,19 +66,23 @@ void lcd1602_send_string(const char str[]) {
         lcd1602_send_char(ch);
 }
 
+void lcd1602_clear() {
+    send_cmd_byte(0x01);
+}
+
 static void set_data(uint8_t half_byte) {
-    digital_write(D4, half_byte & 1);
-    digital_write(D5, (half_byte >> 1) & 1);
-    digital_write(D6, (half_byte >> 2) & 1);
-    digital_write(D7, (half_byte >> 3) & 1);
+    digital_write(DATA_4, half_byte & 1);
+    digital_write(DATA_5, (half_byte >> 1) & 1);
+    digital_write(DATA_6, (half_byte >> 2) & 1);
+    digital_write(DATA_7, (half_byte >> 3) & 1);
 }
 
 static void send_half_byte(uint8_t half_byte) {
     set_E;
-    _delay_ms(15);
+    _delay_ms(1);
     set_data(half_byte);
     clear_E;
-    _delay_ms(50);
+    _delay_ms(1);
 }
 
 static void send_byte(uint8_t byte, enum byte_mode mode) {
@@ -94,14 +97,14 @@ static void send_cmd_byte(uint8_t byte) {
 
 static void pin_init(void) {
     //data pins
-    pin_mode(3, OUTPUT);
-    pin_mode(4, OUTPUT);
-    pin_mode(5, OUTPUT);
-    pin_mode(6, OUTPUT);
+    pin_mode(DATA_4, OUTPUT);
+    pin_mode(DATA_5, OUTPUT);
+    pin_mode(DATA_6, OUTPUT);
+    pin_mode(DATA_7, OUTPUT);
 
     //E
-    pin_mode(11, OUTPUT);
+    pin_mode(E, OUTPUT);
     //RS
-    pin_mode(12, OUTPUT);
+    pin_mode(RS, OUTPUT);
 }
 
