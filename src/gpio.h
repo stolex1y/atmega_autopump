@@ -30,4 +30,6 @@ void digital_toggle(uint8_t pin);
 bool analog_read(uint8_t pin);
 void analog_write(uint8_t pin, bool val);
 
+#include "pins.h"
+
 #endif //ARDUINO_AUTOPUMP_GPIO_H
