@@ -5,6 +5,7 @@
 
 typedef void (timer_vector)(void);
 
-void timer1_init(uint8_t hz, timer_vector* timer1_vector);
+void timer1_init(uint16_t hz, timer_vector* timer1_vector);
+void timer1_free();
 
 #endif //ARDUINO_AUTOPUMP_TIMER_H
