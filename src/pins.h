@@ -1,6 +1,8 @@
 #ifndef ARDUINO_AUTOPUMP_PINS_H
 #define ARDUINO_AUTOPUMP_PINS_H
 
+#include <stdint.h>
+
 #define PIN_A0   (14)
 #define PIN_A1   (15)
 #define PIN_A2   (16)
