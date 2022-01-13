@@ -64,4 +64,17 @@ void eeprom_clean(const uint16_t addr_start, const uint16_t addr_end) {
         eeprom_write_byte(i, 0xFF);
 }
 
+uint16_t eeprom_write_bytes(uint16_t addr, void* data, uint16_t data_size) {
+    if (!data || addr >= EEPROM_SIZE) return 0;
+    uint16_t ch_cnt = 0;
+    char* data_ch = (char*) data;
+    char ch = data_ch[ch_cnt];
+    while (addr < EEPROM_SIZE && ch_cnt < data_size) {
+        ch_cnt++;
+        eeprom_write_byte(addr++, ch);
+        ch = data_ch[ch_cnt];
+    }
+    return ch_cnt;
+}
+
 
