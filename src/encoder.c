@@ -12,10 +12,10 @@
 #include "gpio.h"
 #include "timer.h"
 
-#define TIMER_PERIOD_US 100
+#define TIMER_PERIOD_US 50
 
 static struct encoder* tim1_enc;
-static void handle(const struct encoder* encoder, enum encoder_state state);
+static void handle(struct encoder* encoder, enum encoder_state state);
 static void timer1_vector_encoder();
 static void pin_init(struct encoder_pins pins);
 
@@ -31,6 +31,19 @@ void encoder_init(struct encoder* encoder) {
     timer1_init(hz, timer1_vector_encoder);
 }
 
+enum encoder_state encoder_get_curr_state(struct encoder* encoder) {
+    if (encoder) return encoder->state;
+    else return ENC_STATE_UNDEFINED;
+}
+
+//void encoder_add_handler(struct encoder* enc, enum encoder_state state, handler* adding_handler) {
+//    if (!enc) return;
+//    handler* curr_handler = enc->handlers[state];
+//    if (!curr_handler) curr_handler = adding_handler;
+//    else {
+//
+//    }
+//}
 
 static bool button_is_pressed(const struct encoder* encoder) {
     return !digital_read(encoder->pins.key);
@@ -94,8 +107,7 @@ static void timer1_vector_encoder() {
 
     switch (tim1_enc->old_state | tim1_enc->new_state) {
         case 0x01:
-        case 0x0e:
-//            tim1_enc->cnt++;
+//        case 0x0e:
             if (button_is_hold(tim1_enc)) {
                 handle(tim1_enc, ENC_STATE_PRESS_N_TURN_RIGHT);
                 tim1_enc->was_turned = true;
@@ -103,8 +115,7 @@ static void timer1_vector_encoder() {
                 handle(tim1_enc, ENC_STATE_TURN_RIGHT);
             break;
         case 0x04:
-        case 0x0b:
-//            tim1_enc->cnt--;
+//        case 0x0b:
             if (button_is_hold(tim1_enc)) {
                 handle(tim1_enc, ENC_STATE_PRESS_N_TURN_LEFT);
                 tim1_enc->was_turned = true;
@@ -121,13 +132,16 @@ static void timer1_vector_encoder() {
                         handle(tim1_enc, ENC_STATE_DOUBLE_CLICK);
                         break;
                 }
+            } else {
+                tim1_enc->state = ENC_STATE_UNDEFINED;
             }
     }
     tim1_enc->old_state = tim1_enc->new_state << 2;
     tim1_enc->was_pressed = tim1_enc->pressed;
 }
 
-static void handle(const struct encoder* encoder, enum encoder_state state) {
+static void handle(struct encoder* encoder, enum encoder_state state) {
+    encoder->state = state;
     if (encoder->handlers[state])
         encoder->handlers[state]();
 }
