@@ -18,7 +18,9 @@ SRC = src
 BIN = bin
 TARGET = main
 #SOURCES = blink_test.c gpio.c
-OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o $(BIN)/lcd1602.o $(BIN)/eeprom.o $(BIN)/coordinates.o $(BIN)/encoder.o
+OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o $(BIN)/lcd1602.o \
+	$(BIN)/eeprom.o $(BIN)/coordinates.o $(BIN)/encoder.o $(BIN)/menu.o $(BIN)/autopump.o \
+	$(BIN)/date.o $(BIN)/plant.o
 
 VPATH += $(BIN) $(SRC)
 
