@@ -9,22 +9,22 @@
 #define LCD_WIDTH 16
 #define LCD_HEIGHT 2
 
-struct lcd1602 {
-    bool is_4bit;
-    const uint8_t E;
-    const uint8_t RS;
-    const uint8_t DATA_0;
-    const uint8_t DATA_1;
-    const uint8_t DATA_2;
-    const uint8_t DATA_3;
-    const uint8_t DATA_4;
-    const uint8_t DATA_5;
-    const uint8_t DATA_6;
-    const uint8_t DATA_7;
-    struct coordinates curr_addr;
+struct lcd1602_pins {
+    uint8_t E;
+    uint8_t RS;
+    uint8_t DATA_0;
+    uint8_t DATA_1;
+    uint8_t DATA_2;
+    uint8_t DATA_3;
+    uint8_t DATA_4;
+    uint8_t DATA_5;
+    uint8_t DATA_6;
+    uint8_t DATA_7;
 };
 
-void lcd1602_init(struct lcd1602* lcd);
+struct lcd1602;
+
+struct lcd1602* lcd1602_create(bool is_4bit, struct lcd1602_pins pins);
 void lcd1602_set_cursor_pos(struct lcd1602* lcd, struct coordinates coordinates);
 void lcd1602_send_char(struct lcd1602* lcd, char ch);
 void lcd1602_send_string(struct lcd1602* lcd, const char str[]);

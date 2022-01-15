@@ -23,13 +23,13 @@
 #define reg16_write(regH, regL, val) regH = high_byte(val); regL = low_byte(val)
 #define reg16_read(regH, regL) (regL | (regH << 8))
 
+#define reg_clear(reg) (reg = 0)
+
 void pin_mode(uint8_t pin, uint8_t mode);
 void digital_write(uint8_t pin, bool val);
 bool digital_read(uint8_t pin);
 void digital_toggle(uint8_t pin);
-bool analog_read(uint8_t pin);
-void analog_write(uint8_t pin, bool val);
-
-#include "pins.h"
+//bool analog_read(uint8_t pin);
+//void analog_write(uint8_t pin, bool val);
 
 #endif //ARDUINO_AUTOPUMP_GPIO_H

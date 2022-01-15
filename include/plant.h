@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "date.h"
+#include "time.h"
 
 enum plant_setting {
     NAME = 0,
@@ -13,21 +13,16 @@ enum plant_setting {
     PLANT_STTNG_LEN
 };
 
-static const char* plant_setting_str[] = {
-    [NAME] = "Name",
-    [DELAY] = "Delay",
-    [PUMP] = "Pump"
-};
-
 struct plant {
     const char* name;
-    struct date delay;
-    struct date pump;
+    struct time delay;
+    struct time pump;
     uint8_t pump_pin;
 };
 
 struct plant plant_create(const char* name, uint8_t pump_pin);
-bool plant_get_date_setting(struct plant plant, enum plant_setting setting, struct date* date);
-void plant_set_date_setting(struct plant* plant, enum plant_setting setting, struct date new_date_setting);
+bool plant_get_time_setting(struct plant plant, enum plant_setting setting, struct time* time);
+void plant_set_time_setting(struct plant* plant, enum plant_setting setting, struct time new_time_setting);
+const char* plant_setting_to_str(enum plant_setting setting);
 
 #endif //ARDUINO_AUTOPUMP_PLANT_H

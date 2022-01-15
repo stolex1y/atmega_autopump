@@ -1,17 +1,13 @@
 #include "eeprom.h"
 
 #include <avr/io.h>
-#include <avr/interrupt.h>
 #include <avr/sfr_defs.h>
-#include <util/delay.h>
 
-#include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "gpio.h"
 
-void eeprom_write_byte(uint16_t addr, uint8_t data) {
+void eeprom_write_byte(const uint16_t addr, const uint8_t data) {
     // Wait for completion of previous write
     loop_until_bit_is_clear(EECR, EEPE);
 
@@ -22,7 +18,7 @@ void eeprom_write_byte(uint16_t addr, uint8_t data) {
     bit_set(EECR, EEPE);
 }
 
-uint8_t eeprom_read_byte(uint16_t addr) {
+uint8_t eeprom_read_byte(const uint16_t addr) {
     // Wait for completion of previous write
     loop_until_bit_is_clear(EECR, EEPE);
 
@@ -35,10 +31,10 @@ uint8_t eeprom_read_byte(uint16_t addr) {
 uint16_t eeprom_read_string(uint16_t addr, char str[], const uint16_t size) {
     uint16_t curr_size = 0;
     if (!str || !size || addr >= EEPROM_SIZE) return 0;
-    char curr_ch = eeprom_read_byte(addr++);
+    char curr_ch = (char) eeprom_read_byte(addr++);
     while (curr_ch != 0 && curr_size < size && addr < EEPROM_SIZE) {
         str[curr_size++] = curr_ch;
-        curr_ch = eeprom_read_byte(addr++);
+        curr_ch = (char) eeprom_read_byte(addr++);
     }
     if (curr_size < size && addr < EEPROM_SIZE)
         str[curr_size] = 0;
@@ -64,7 +60,7 @@ void eeprom_clean(const uint16_t addr_start, const uint16_t addr_end) {
         eeprom_write_byte(i, 0xFF);
 }
 
-uint16_t eeprom_write_bytes(uint16_t addr, void* data, uint16_t data_size) {
+uint16_t eeprom_write_bytes(uint16_t addr, const void* data, const uint16_t data_size) {
     if (!data || addr >= EEPROM_SIZE) return 0;
     uint16_t ch_cnt = 0;
     char* data_ch = (char*) data;

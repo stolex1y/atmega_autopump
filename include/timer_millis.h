@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 #include "uptime.h"
-#include "date.h"
+#include "time.h"
 
 struct timer_millis;
 
@@ -16,13 +16,11 @@ struct timer_millis_param_handler {
     timer_millis_handler* func;
 };
 
-struct timer_millis;
-
 struct timer_millis* timer_millis_create(uint64_t running_time_ms);
 bool timer_millis_start(struct timer_millis* timer);
-bool timer_is_running(struct timer_millis* timer);
+bool timer_is_running(const struct timer_millis* timer);
 void timer_millis_stop(struct timer_millis* timer);
-void timer_millis_reconfig(struct timer_millis* timer, struct date new_time);
+void timer_millis_reconfig(struct timer_millis* timer, struct time new_time);
 void timer_millis_set_handler(struct timer_millis* timer, struct timer_millis_param_handler handler);
 void timer_millis_upd(struct timer_millis* timer);
 struct timer_millis_param_handler timer_millis_param_handler_create(void* param, timer_millis_handler handler);

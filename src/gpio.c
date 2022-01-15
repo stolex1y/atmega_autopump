@@ -1,6 +1,7 @@
 #include "gpio.h"
 
 #include <avr/io.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -44,28 +45,13 @@ void pin_mode(uint8_t pin, uint8_t mode) {
 				bit_set(PORTC, pin - 14);
 			}
 			return;
+
+        default:
+            break;
 	}
 }
 
 void digital_write(uint8_t pin, bool val) {
-    /*
-     * switch (pin) {
-    case 3: bitClear(TCCR2A, COM2B1);
-      break;
-    case 5: bitClear(TCCR0A, COM0B1);
-      break;
-    case 6: bitClear(TCCR0A, COM0A1);
-      break;
-    case 9: bitClear(TCCR1A, COM1A1);
-      break;
-    case 10: bitClear(TCCR1A, COM1B1);
-      break;
-    case 11: bitClear(TCCR2A, COM2A1); 	// PWM disable
-      break;
-  }
-     */
-	// TODO digiral_write: отключение шим
-
     if (pin < 8) {
         bit_write(PORTD, pin, val);
     } else if (pin < 14) {

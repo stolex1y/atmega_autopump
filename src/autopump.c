@@ -1,22 +1,20 @@
-#include "../include/autopump.h"
+#include "autopump.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "../include/lcd1602.h"
-#include "../include/coordinates.h"
-#include "../include/menu.h"
-#include "../include/encoder.h"
-#include "../include/date.h"
-#include "../include/eeprom.h"
-#include "../include/plant.h"
-#include "../include/uptime.h"
-#include "../include/timer_millis.h"
-#include "../include/gpio.h"
+#include "lcd1602.h"
+#include "coordinates.h"
+#include "menu.h"
+#include "encoder.h"
+#include "time.h"
+#include "eeprom.h"
+#include "plant.h"
+#include "timer_millis.h"
+#include "gpio.h"
 
 #define EEPROM_KEY_ADDR 0
 #define EEPROM_KEY "Autopump"
@@ -24,9 +22,6 @@
 #define EEPROM_ADDR_START EEPROM_KEY_LEN
 #define EEPROM_NAME_SIZE 18
 #define DATE_STR_SIZE 9
-
-static struct menu* menu;
-static struct encoder* encoder;
 
 struct autopump {
     struct plant* plant;
@@ -40,47 +35,39 @@ static struct {
 } autopumps;
 
 static struct {
-    struct date date;
+    struct time time;
     uint16_t str_size;
     char str[DATE_STR_SIZE];
-    enum date_part curr_date_part;
-} date_tmp;
+    enum time_part curr_time_part;
+} time_tmp;
 
+static struct menu* menu;
+static struct encoder* encoder;
 static const uint16_t eeprom_addresses[] = {
     [NAME] = EEPROM_SIZE,
     [DELAY] = 0,
     [PUMP] = DATE_STR_SIZE
 };
 
-static uint16_t eeprom_get_plant_item_addr(size_t plant_index, enum plant_setting setting);
 static bool has_saved_settings();
-static void read_plant_setting(size_t plant_index, enum plant_setting setting, char* buf, size_t buf_len);
-static void write_plant_setting(size_t plant_index, enum plant_setting setting, char* buf);
-static void encoder_turn_right();
-static void encoder_turn_left();
-static void encoder_click();
-static void encoder_double_click();
-static void encoder_hold();
 static void save_eeprom_key(size_t plants_len);
 static void read_plant_settings(size_t plant_index);
 static void generate_empty_plant_settings(size_t plant_index);
-static void set_encoder_handlers(struct encoder* enc);
-static void date_tmp_init();
-static void date_tmp_update_str();
-static void date_item_setting_start();
-static void date_item_setting_update();
-static void date_item_setting_next();
-static void date_item_setting_end();
-static void date_item_setting_cancel();
+
 static void set_menu_item_setting_handlers(struct menu_item item);
-static void autopumps_init(struct plant plants[], size_t plants_len);
+static void set_encoder_handlers(struct encoder* enc);
+
+static void time_tmp_init();
+static void time_tmp_update_str();
+
+static void autopumps_init(const struct plant plants[], size_t plants_len);
 static void autopump_start_delay(struct timer_millis* timer, struct plant* plant);
 
-void autopump_init(struct lcd1602* lcd, struct encoder* enc, struct plant p[], size_t plants_len) {
-    date_tmp_init();
+void autopump_init(struct lcd1602* const lcd, struct encoder* const enc, const struct plant p[], const size_t plants_len) {
+    time_tmp_init();
     autopumps_init(p, plants_len);
 
-    bool has_saved_set = has_saved_settings();
+    const bool has_saved_set = has_saved_settings();
     if (!has_saved_set) {
         save_eeprom_key(plants_len);
     }
@@ -108,9 +95,9 @@ void autopump_init(struct lcd1602* lcd, struct encoder* enc, struct plant p[], s
             generate_empty_plant_settings(i);
         }
         for (enum plant_setting setting = DELAY; setting < PLANT_STTNG_LEN; setting++) {
-            plant_get_date_setting(autopumps.plants[i], setting, &date_tmp.date);
-            date_tmp_update_str();
-            struct menu_item item = menu_item_create(plant_setting_str[setting], date_tmp.str, LCD_WIDTH, false);
+            plant_get_time_setting(autopumps.plants[i], setting, &time_tmp.time);
+            time_tmp_update_str();
+            const struct menu_item item = menu_item_create(plant_setting_to_str(setting), time_tmp.str, LCD_WIDTH, false);
             set_menu_item_setting_handlers(item);
             menu_item_set(
                     menu,
@@ -131,7 +118,7 @@ void autopump_timers_update() {
     }
 }
 
-static void autopumps_init(struct plant p[], size_t plants_len) {
+static void autopumps_init(const struct plant p[], const size_t plants_len) {
     autopumps.len = plants_len;
     autopumps.plants = malloc(sizeof(struct plant) * plants_len);
     memcpy(autopumps.plants, p, sizeof(struct plant) * plants_len);
@@ -145,58 +132,23 @@ static void autopumps_init(struct plant p[], size_t plants_len) {
     }
 }
 
-static void save_eeprom_key(size_t plants_len) {
+static void save_eeprom_key(const size_t plants_len) {
     eeprom_clean(EEPROM_ADDR_START, EEPROM_ADDR_START + plants_len * EEPROM_NAME_SIZE);
     eeprom_write_string(EEPROM_KEY_ADDR, EEPROM_KEY);
 }
 
-static void date_tmp_init() {
-    date_tmp.str_size = DATE_STR_SIZE;
-    date_tmp.curr_date_part = 0;
+static void time_tmp_init() {
+    time_tmp.str_size = DATE_STR_SIZE;
+    time_tmp.curr_time_part = 0;
 }
 
-static void date_tmp_update_str() {
-    date_to_string(date_tmp.date, date_tmp.str, date_tmp.str_size);
+static void time_tmp_update_str() {
+    time_to_string(time_tmp.time, time_tmp.str, time_tmp.str_size);
 }
 
-static void set_encoder_handlers(struct encoder* enc) {
-    enc->handlers[ENC_STATE_TURN_RIGHT] = encoder_turn_right;
-    enc->handlers[ENC_STATE_TURN_LEFT] = encoder_turn_left;
-    enc->handlers[ENC_STATE_CLICK] = encoder_click;
-    enc->handlers[ENC_STATE_DOUBLE_CLICK] = encoder_double_click;
-    enc->handlers[ENC_STATE_HOLD] = encoder_hold;
-}
-
-static void set_menu_item_setting_handlers(struct menu_item item) {
-    item.handlers[ITEM_STTNG_START] = date_item_setting_start;
-    item.handlers[ITEM_STTNG_END] = date_item_setting_end;
-    item.handlers[ITEM_STTNG_UPDATE] = date_item_setting_update;
-    item.handlers[ITEM_STTNG_NEXT] = date_item_setting_next;
-    item.handlers[ITEM_STTNG_CANCEL] = date_item_setting_cancel;
-
-}
-
-static void generate_empty_plant_settings(size_t plant_index) {
-    date_tmp.date = date_empty();
-    date_tmp_update_str();
-    autopumps.plants[plant_index].delay = date_tmp.date;
-    write_plant_setting(plant_index, DELAY, date_tmp.str);
-    autopumps.plants[plant_index].pump = date_tmp.date;
-    write_plant_setting(plant_index, PUMP, date_tmp.str);
-}
-
-static void read_plant_settings(size_t plant_index) {
-    read_plant_setting(plant_index, DELAY, date_tmp.str, date_tmp.str_size);
-    autopumps.plants[plant_index].delay = date_from_string(date_tmp.str);
-    read_plant_setting(plant_index, PUMP, date_tmp.str, date_tmp.str_size);
-    autopumps.plants[plant_index].pump = date_from_string(date_tmp.str);
-}
-
-static uint16_t eeprom_get_plant_item_addr(size_t plant_index, enum plant_setting setting) {
-    uint16_t addr = eeprom_addresses[setting];
-    if (eeprom_addresses[setting] != EEPROM_SIZE) addr += EEPROM_ADDR_START + plant_index * EEPROM_NAME_SIZE;
-    return addr;
-}
+/*
+ * Read and write menu settings with eeprom
+ */
 
 static bool has_saved_settings() {
     char saved_key[EEPROM_KEY_LEN];
@@ -204,7 +156,31 @@ static bool has_saved_settings() {
     return !memcmp(saved_key, EEPROM_KEY, EEPROM_KEY_LEN);
 }
 
-static void read_plant_setting(size_t plant_index, enum plant_setting setting, char* buf, size_t buf_len) {
+static uint16_t eeprom_get_plant_item_addr(const size_t plant_index, const enum plant_setting setting) {
+    uint16_t addr = eeprom_addresses[setting];
+    if (eeprom_addresses[setting] != EEPROM_SIZE) addr += EEPROM_ADDR_START + plant_index * EEPROM_NAME_SIZE;
+    return addr;
+}
+
+static void write_plant_setting(const size_t plant_index, const enum plant_setting setting, const char* buf) {
+    eeprom_write_string(
+            eeprom_get_plant_item_addr(plant_index, setting),
+            buf
+    );
+    const struct autopump curr_pump = autopumps.pumps[plant_index];
+    autopump_start_delay(curr_pump.timer, curr_pump.plant);
+}
+
+static void generate_empty_plant_settings(const size_t plant_index) {
+    time_tmp.time = time_empty();
+    time_tmp_update_str();
+    autopumps.plants[plant_index].delay = time_tmp.time;
+    write_plant_setting(plant_index, DELAY, time_tmp.str);
+    autopumps.plants[plant_index].pump = time_tmp.time;
+    write_plant_setting(plant_index, PUMP, time_tmp.str);
+}
+
+static void read_plant_setting(const size_t plant_index, const enum plant_setting setting, char* buf, size_t buf_len) {
     eeprom_read_string(
             eeprom_get_plant_item_addr(plant_index, setting),
             buf,
@@ -212,75 +188,83 @@ static void read_plant_setting(size_t plant_index, enum plant_setting setting, c
     );
 }
 
-static void write_plant_setting(size_t plant_index, enum plant_setting setting, char* buf) {
-    eeprom_write_string(
-            eeprom_get_plant_item_addr(plant_index, setting),
-            buf
-    );
-    struct autopump curr_pump = autopumps.pumps[plant_index];
-    autopump_start_delay(curr_pump.timer, curr_pump.plant);
+static void read_plant_settings(const size_t plant_index) {
+    read_plant_setting(plant_index, DELAY, time_tmp.str, time_tmp.str_size);
+    autopumps.plants[plant_index].delay = time_from_string(time_tmp.str);
+    read_plant_setting(plant_index, PUMP, time_tmp.str, time_tmp.str_size);
+    autopumps.plants[plant_index].pump = time_from_string(time_tmp.str);
 }
 
-/**
+/*
  * Encoder handler functions and functions for managing menus and plant settings.
  */
 
-static void date_item_setting_start() {
-    size_t curr_plant = menu_get_curr_list_index(menu);
+static void time_item_setting_start() {
+    const size_t curr_plant = menu_get_curr_list_index(menu);
     if (curr_plant >= autopumps.len) {
         menu_previous_state(menu);
         return;
     }
-    enum plant_setting curr_setting = (enum plant_setting) menu_get_curr_item_index(menu);
-    if (!plant_get_date_setting(autopumps.plants[curr_plant], curr_setting, &date_tmp.date)) {
+    const enum plant_setting curr_setting = (enum plant_setting) menu_get_curr_item_index(menu);
+    if (!plant_get_time_setting(autopumps.plants[curr_plant], curr_setting, &time_tmp.time)) {
         menu_previous_state(menu);
         return;
     }
-    date_tmp_update_str();
-    date_tmp.curr_date_part = 0;
+    time_tmp_update_str();
+    time_tmp.curr_time_part = 0;
 }
 
-static void date_item_setting_update() {
-    enum encoder_state enc_state = encoder_get_curr_state(encoder);
+static void time_item_setting_update() {
+    const enum encoder_state enc_state = encoder_get_curr_state(encoder);
     if (enc_state == ENC_STATE_TURN_RIGHT) {
-        date_part_inc(&date_tmp.date, date_tmp.curr_date_part);
+        time_part_inc(&time_tmp.time, time_tmp.curr_time_part);
     } else if (enc_state == ENC_STATE_TURN_LEFT) {
-        date_part_dec(&date_tmp.date, date_tmp.curr_date_part);
+        time_part_dec(&time_tmp.time, time_tmp.curr_time_part);
     }
-    date_tmp_update_str();
-    menu_set_value(menu, date_tmp.str);
+    time_tmp_update_str();
+    menu_set_value(menu, time_tmp.str);
 }
 
-static void date_item_setting_next() {
-    if (date_tmp.curr_date_part + 1 == DATE_PART_LEN) {
+static void time_item_setting_next() {
+    if (time_tmp.curr_time_part + 1 == TIME_PART_LEN) {
         menu_item_setting_end(menu);
     } else {
-        date_tmp.curr_date_part++;
+        time_tmp.curr_time_part++;
     }
 }
 
-static void date_item_setting_end() {
-    size_t curr_plant = menu_get_curr_list_index(menu);
+static void time_item_setting_end() {
+    const size_t curr_plant = menu_get_curr_list_index(menu);
     if (curr_plant >= autopumps.len) {
         menu_previous_state(menu);
         return;
     }
-    enum plant_setting curr_setting = (enum plant_setting) menu_get_curr_item_index(menu);
-    write_plant_setting(curr_plant, curr_setting, date_tmp.str);
-    plant_set_date_setting(autopumps.plants + curr_plant, curr_setting, date_tmp.date);
+    const enum plant_setting curr_setting = (enum plant_setting) menu_get_curr_item_index(menu);
+    write_plant_setting(curr_plant, curr_setting, time_tmp.str);
+    plant_set_time_setting(autopumps.plants + curr_plant, curr_setting, time_tmp.time);
 }
 
-static void date_item_setting_cancel() {
-    size_t curr_plant = menu_get_curr_list_index(menu);
+static void time_item_setting_cancel() {
+    const size_t curr_plant = menu_get_curr_list_index(menu);
     if (curr_plant >= autopumps.len) {
         menu_previous_state(menu);
         return;
     }
-    enum plant_setting curr_setting = (enum plant_setting) menu_get_curr_item_index(menu);
-    plant_get_date_setting(autopumps.plants[curr_plant], curr_setting, &date_tmp.date);
-    date_tmp_update_str();
-    menu_set_value(menu, date_tmp.str);
+    const enum plant_setting curr_setting = (enum plant_setting) menu_get_curr_item_index(menu);
+    plant_get_time_setting(autopumps.plants[curr_plant], curr_setting, &time_tmp.time);
+    time_tmp_update_str();
+    menu_set_value(menu, time_tmp.str);
 }
+
+static void set_menu_item_setting_handlers(struct menu_item item) {
+    item.handlers[ITEM_STTNG_START] = time_item_setting_start;
+    item.handlers[ITEM_STTNG_END] = time_item_setting_end;
+    item.handlers[ITEM_STTNG_UPDATE] = time_item_setting_update;
+    item.handlers[ITEM_STTNG_NEXT] = time_item_setting_next;
+    item.handlers[ITEM_STTNG_CANCEL] = time_item_setting_cancel;
+}
+
+// Encoder's handlers
 
 static void encoder_turn_right() {
     menu_next(menu);
@@ -299,17 +283,25 @@ static void encoder_double_click() {
 }
 
 static void encoder_hold() {
-    size_t plant_i = menu_get_curr_list_index(menu);
+    const size_t plant_i = menu_get_curr_list_index(menu);
     generate_empty_plant_settings(plant_i);
 }
 
-/**
+static void set_encoder_handlers(struct encoder* const enc) {
+    encoder_set_handler(enc, ENC_STATE_CLICK, encoder_click);
+    encoder_set_handler(enc, ENC_STATE_TURN_RIGHT, encoder_turn_right);
+    encoder_set_handler(enc, ENC_STATE_TURN_LEFT, encoder_turn_left);
+    encoder_set_handler(enc, ENC_STATE_DOUBLE_CLICK, encoder_double_click);
+    encoder_set_handler(enc, ENC_STATE_HOLD, encoder_hold);
+}
+
+/*
  * Direct control of plant pumps: configuration and start of the timer.
  */
 
 static void autopump_start_pump(struct timer_millis* timer, struct plant* plant);
 
-static void autopump_start_delay(struct timer_millis* timer, struct plant* plant) {
+static void autopump_start_delay(struct timer_millis* const timer, struct plant* const plant) {
     digital_write(plant->pump_pin, LOW);
     timer_millis_reconfig(timer, plant->delay);
     timer_millis_set_handler(
@@ -319,7 +311,7 @@ static void autopump_start_delay(struct timer_millis* timer, struct plant* plant
     timer_millis_start(timer);
 }
 
-static void autopump_start_pump(struct timer_millis* timer, struct plant* plant) {
+static void autopump_start_pump(struct timer_millis* const timer, struct plant* const plant) {
     digital_write(plant->pump_pin, HIGH);
     timer_millis_reconfig(timer, plant->pump);
     timer_millis_set_handler(

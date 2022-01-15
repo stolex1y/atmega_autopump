@@ -1,16 +1,14 @@
-#include "../include/uptime.h"
+#include "uptime.h"
 
 #include <avr/interrupt.h>
 
 #include <stdint.h>
 
-#include "../include/timer.h"
+#include "timer.h"
 
 static volatile uint64_t millis_value = 0;
 
-static void timer0_comp_isr() {
-    millis_value++;
-}
+static void timer0_comp_isr();
 
 void uptime_init() {
     timer0_init(timer0_comp_isr);
@@ -23,5 +21,9 @@ uint64_t millis() {
     sei();
 
     return m;
-};
+}
+
+static void timer0_comp_isr() {
+    millis_value++;
+}
 
