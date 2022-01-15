@@ -1,9 +1,14 @@
-#include "date.h"
+#include "../include/date.h"
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <inttypes.h>
+
+#define HOURS_TO_MS (uint64_t) 3600000
+#define MINUTES_TO_MS (uint64_t) 60000
+#define SECONDS_TO_MS (uint64_t) 1000
+
 
 int date_to_string(struct date date, char* buf, size_t buf_len) {
     return snprintf(buf, buf_len, "%02" PRIu8 ":%02" PRIu8 ":%02" PRIu8,
@@ -53,4 +58,12 @@ void date_part_dec(struct date* date, enum date_part date_part) {
     uint8_t date_part_min = 0;
     if (date->parts[date_part] - 1 >= date_part_min)
         date->parts[date_part]--;
+}
+
+uint64_t date_to_ms(const struct date date) {
+    uint64_t millis = 0;
+    millis += (uint64_t) date.parts[DATE_PART_HR] * HOURS_TO_MS;
+    millis += (uint64_t) date.parts[DATE_PART_MIN] * MINUTES_TO_MS;
+    millis += (uint64_t) date.parts[DATE_PART_SEC] * SECONDS_TO_MS;
+    return millis;
 }

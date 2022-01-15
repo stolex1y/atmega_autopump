@@ -23,10 +23,11 @@ struct plant {
     const char* name;
     struct date delay;
     struct date pump;
+    uint8_t pump_pin;
 };
 
-struct plant plant_create(const char* name);
+struct plant plant_create(const char* name, uint8_t pump_pin);
 bool plant_get_date_setting(struct plant plant, enum plant_setting setting, struct date* date);
-void plant_set_date_setting(struct plant plant, enum plant_setting setting, struct date new_date_setting);
+void plant_set_date_setting(struct plant* plant, enum plant_setting setting, struct date new_date_setting);
 
 #endif //ARDUINO_AUTOPUMP_PLANT_H

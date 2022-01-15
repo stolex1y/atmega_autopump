@@ -6,7 +6,9 @@
 
 #include "lcd1602.h"
 #include "encoder.h"
+#include "plant.h"
 
-void autopump_init(struct lcd1602* lcd, struct encoder* enc, char* plant_names[], size_t plants_len);
+void autopump_init(struct lcd1602* lcd, struct encoder* enc, struct plant plants[], size_t plants_len);
+void autopump_timers_update();
 
 #endif //ARDUINO_AUTOPUMP_AUTOPUMP_H

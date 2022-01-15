@@ -17,6 +17,7 @@ enum date_part {
 
 int date_to_string(struct date date, char* buf, size_t buf_len);
 struct date date_from_string(const char* date_str);
+uint64_t date_to_ms(const struct date date);
 struct date date_empty();
 void date_part_inc(struct date* date, enum date_part date_part);
 void date_part_dec(struct date* date, enum date_part date_part);
