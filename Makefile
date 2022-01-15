@@ -1,48 +1,59 @@
+SRC_DIR = src
+OBJ_DIR = obj
+BUILD_DIR = build
+INCLUDE_DIR = include
+RES_DIR = res
+#MAKEFILE_DIR = makefile
+
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+HDRS = $(wildcard $(INCLUDE_DIR)/*.h)
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+#MAKEFILES := $(patsubst $(SRC_DIR)/%.c,$(MAKEFILE_DIR)/%.d,$(SRCS))
+TARGET_NAME = main
+TARGET = $(BUILD_DIR)/$(TARGET_NAME).hex
+
+EEPROMDUMP = $(RES_DIR)/eeprom_dump
+
+# Device config
 DEVICE = atmega328p
 CLOCK = 16000000
 EEPROM_SIZE = 1024
 PORT = COM7
 
 AVRD = avrdude
-AVRDFLAGS = -F -v -p $(DEVICE) -P $(PORT) -b57600 -c arduino -D -U flash:w:$< #-U eeprom:r:eeprom_dump:r
-
+AVRD_EEPROMDUMP = -U eeprom:r:$(EEPROMDUMP):r
+AVRDFLAGS = -F -v -p $(DEVICE) -P $(PORT) -b57600 -c arduino -D -U flash:w:$<
 CC = avr-gcc 
-CFLAGS = -DEEPROM_SIZE=1024 -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -std=c11 #-Werror
-
+CFLAGS = -DEEPROM_SIZE=$(EEPROM_SIZE) -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -O2 -Wall -std=c11 -pedantic -I./$(INCLUDE_DIR) #-Werror
 OBJCOPY = avr-objcopy
-COPYFLAGS = -j .text -j .data -O ihex
+OBJCOPYFLAGS = -j .text -j .data -O ihex
+AVRSIZEFLAGS = --format=avr --mcu=$(DEVICE)
 
-AVRSFLAGS = --format=avr --mcu=$(DEVICE)
+all: $(TARGET) size
 
-SRC = src
-BIN = bin
-TARGET = main
-#SOURCES = blink_test.c gpio.c
-OBJECTS = $(BIN)/blink_test.o $(BIN)/gpio.o $(BIN)/timer.o $(BIN)/lcd1602.o \
-	$(BIN)/eeprom.o $(BIN)/coordinates.o $(BIN)/encoder.o $(BIN)/menu.o $(BIN)/autopump.o \
-	$(BIN)/date.o $(BIN)/plant.o
+#include $(MAKEFILES)
 
-VPATH += $(BIN) $(SRC)
+$(TARGET): $(OBJ_DIR)/$(TARGET_NAME).elf
+	@mkdir -p $(dir $@)
+	$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
 
-all: $(BIN)/$(TARGET).hex size
+$(OBJ_DIR)/$(TARGET_NAME).elf: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(BIN)/%.o: %.c
-	$(CC) $(CFLAGS) $^ -o $@ -c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $^
 
-$(BIN)/$(TARGET).elf: $(OBJECTS)
-	$(CC) $(CFLAGS) $^ -o $@
-	
-$(BIN)/$(TARGET).hex: $(BIN)/$(TARGET).elf
-	$(OBJCOPY) $(COPYFLAGS) $^ $@
-
-flash: $(BIN)/$(TARGET).hex
+flash: $(TARGET)
 	$(AVRD) $(AVRDFLAGS)
+
+dump: $(TARGET)
+	$(AVRD) $(AVRDFLAGS) $(AVRD_EEPROMDUMP)
 	
-size: $(BIN)/$(TARGET).elf
-	avr-size $(AVRSFLAGS) -C $<
+size: $(OBJ_DIR)/$(TARGET_NAME).elf
+	avr-size $(AVRSIZEFLAGS) -C $<
 	
 clean:
-	-rm -rf $(BIN)
-	mkdir $(BIN)
+	rm -rf $(OBJS)
 	
-.PHONY: clean size flash all
+.PHONY: clean size flash dump all
